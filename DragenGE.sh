@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Usage: bash /data/pipelines/DragenGE/DragenGE-1.0.0/DragenGE.sh /staging/data/fastq/191010_D00501_0366_BH5JWHBCX3/Data/IlluminaTruSightOne/18M01315
 
-version=0.0.1
+version=1.0.0
 sampleDir=$1
 
 . *.variables
