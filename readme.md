@@ -6,6 +6,8 @@ A pipeline to perform joint calling on targetted enrichment NGS data on the Drag
 
 Calls SNPs/Indels
 
+Works together with the post processing pipeline to generate all the qc stats, annotations needed.
+
 ## Requirements
 
 dragen Version 07.021.408.3.4.12 (Software Release v3.4)
