@@ -1,20 +1,14 @@
 #!/bin/bash
 set -euo pipefail
 
-# Usage: bash /data/pipelines/DragenGE/DragenGE-1.0.0/DragenGE.sh /staging/data/fastq/191010_D00501_0366_BH5JWHBCX3/Data/IlluminaTruSightOne/18M01315
+# Usage: bash /data/pipelines/DragenGE/DragenGE-1.0.0/DragenGE.sh
 
 version=1.0.0
-sampleDir=$1
 
 . *.variables
 . /data/pipelines/"$pipelineName"/"$pipelineName"-"$pipelineVersion"/"$panel"/*.variables
 
-
-# make output dir for results
-mkdir -p /staging/data/results/$seqId/$panel/$sampleId
-
-cp *.variables /staging/data/results/$seqId/$panel/$sampleId
-cp /data/pipelines/"$pipelineName"/"$pipelineName"-"$pipelineVersion"/"$panel"/*.variables /staging/data/results/$seqId/$panel
+cp /data/pipelines/"$pipelineName"/"$pipelineName"-"$pipelineVersion"/"$panel"/*.variables ..
 
 
 # make csv with fastqs in
@@ -35,9 +29,9 @@ done
 
 
 
-dragen \
+/opt/edico/bin/dragen \
 -r /staging/human/reference/GRCh37/ \
---output-directory /staging/data/results/$seqId/$panel/$sampleId \
+--output-directory . \
 --output-file-prefix "$seqId"_"$sampleId" \
 --output-format BAM \
 --enable-map-align-output true \
@@ -51,32 +45,33 @@ dragen \
 --vc-target-bed-padding 100 \
 --strict-mode true 
 
-if [ -e /staging/data/results/$seqId/$panel/$sampleId/"$seqId"_"$sampleId".hard-filtered.gvcf.gz ]; then
-    echo /staging/data/results/$seqId/$panel/$sampleId/"$seqId"_"$sampleId".hard-filtered.gvcf.gz >> /staging/data/results/$seqId/$panel/gVCFList.txt
+if [ -e "$seqId"_"$sampleId".hard-filtered.gvcf.gz ]; then
+    echo $sampleId/"$seqId"_"$sampleId".hard-filtered.gvcf.gz >> ../gVCFList.txt
 fi
 
 # if all samples have been processed for the panel perform joint genotyping
 # expected number
-expGVCF=$(ls -d /staging/data/fastq/$seqId/Data/$panel/*/ | wc -l)
+expGVCF=$(ls -d ../*/ | wc -l)
 
 # observed number
-obsGVCF=$(wc -l < /staging/data/results/$seqId/$panel/gVCFList.txt)
+obsGVCF=$(wc -l < ../gVCFList.txt)
 
 if [ $expGVCF == $obsGVCF ]; then
     echo "$sampleId is the last sample"
     echo "performing joint genotyping"
+    cd ..
 
-    dragen \
+    /opt/edico/bin/dragen \
         -r  /staging/human/reference/GRCh37/ \
-        --output-directory /staging/data/results/$seqId/$panel \
+        --output-directory . \
         --output-file-prefix "$seqId" \
         --enable-joint-genotyping true \
-        --variant-list /staging/data/results/$seqId/$panel/gVCFList.txt \
+        --variant-list gVCFList.txt \
         --strict-mode true
 
 
     # delete gvcfs as we don't need anymore
-    ls /staging/data/results/$seqId/$panel/*/*.gvcf.gz* | xargs rm
+    ls */*.gvcf.gz* | xargs rm
 
 else
     echo "$sampleId is not the last sample"
