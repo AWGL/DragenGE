@@ -1,14 +1,28 @@
 #!/bin/bash
+
 set -euo pipefail
 
-# Usage: bash /data/pipelines/DragenGE/DragenGE-1.0.0/DragenGE.sh
+# set max processes and open files as these differ between wren and head node
+ulimit -S -u 16384
+ulimit -S -n 65535
 
-version=1.0.0
 
-. *.variables
-. /data/pipelines/"$pipelineName"/"$pipelineName"-"$pipelineVersion"/"$panel"/*.variables
+# Usage: cd /staging/data/results/$seqId/$panel/$sampleId && bash DragenWGS.sh 
 
-cp /data/pipelines/"$pipelineName"/"$pipelineName"-"$pipelineVersion"/"$panel"/*.variables ..
+version=2.0.0
+
+##############################################
+# SETUP                                      #
+##############################################
+
+pipeline_dir="/data/diagnostics/pipelines/"
+dragen_ref="/staging/resources/human/reference/GRCh37"
+output_dir="/Output/results/"
+
+
+# copy relevant variables files to the results directory
+cp "$pipeline_dir"/"$pipelineName"/"$pipelineName"-"$pipelineVersion"/config/"$panel"/*.variables ..
+cp -r "$pipeline_dir"/"$pipelineName"/"$pipelineName"-"$pipelineVersion"/config .
 
 
 # make csv with fastqs in
@@ -27,10 +41,8 @@ for fastqPair in $(ls "$sampleId"_S*.fastq.gz | cut -d_ -f1-3 | sort | uniq); do
 done
 
 
-
-
 /opt/edico/bin/dragen \
--r /staging/human/reference/GRCh37/ \
+-r $dragen_ref \
 --output-directory . \
 --output-file-prefix "$seqId"_"$sampleId" \
 --output-format BAM \
@@ -39,9 +51,11 @@ done
 --fastq-list-sample-id $sampleId \
 --enable-duplicate-marking true \
 --enable-variant-caller true \
+--vc-enable-joint-detection true \
+--qc-cross-cont-vcf config/"$panel"/sample_cross_contamination_resource_GRCh37.vcf \
 --vc-sample-name "$sampleId" \
---vc-target-bed /data/pipelines/$pipelineName/"$pipelineName"-"$pipelineVersion"/"$panel"/*.bed \
---vc-emit-ref-confidence BP_RESOLUTION \
+--vc-target-bed config/"$panel"/"$panel"_ROI_b37.bed \
+--vc-emit-ref-confidence GVCF \
 --vc-target-bed-padding 100 \
 --strict-mode true 
 
@@ -62,16 +76,74 @@ if [ $expGVCF == $obsGVCF ]; then
     cd ..
 
     /opt/edico/bin/dragen \
-        -r  /staging/human/reference/GRCh37/ \
+        -r  $dragen_ref \
         --output-directory . \
         --output-file-prefix "$seqId" \
         --enable-joint-genotyping true \
+        --vc-enable-joint-detection true \
         --variant-list gVCFList.txt \
         --strict-mode true
 
 
     # delete gvcfs as we don't need anymore
     ls */*.gvcf.gz* | xargs rm
+
+
+    # move results data - don't move symlinks fastqs
+    if [ -d "$output_dir"/"$seqId"/"$panel" ]; then
+        echo "$output_dir/$seqId/$panel already exists - cannot rsync"
+        exit 1
+    else
+
+        mkdir -p "$output_dir"/"$seqId"/"$panel"
+        rsync -azP --no-links . "$output_dir"/"$seqId"/"$panel"
+
+        # get md5 sums for source
+        find . -type f | egrep -v "*md5" | xargs md5sum | cut -d" " -f 1 | sort > source.md5
+
+        # get md5 sums for destination
+
+        find "$output_dir"/"$seqId"/"$panel" -type f | egrep -v "*md5*" | xargs md5sum | cut -d" " -f 1 | sort > destination.md5
+
+        sourcemd5file=$(md5sum source.md5 | cut -d" " -f 1)
+        destinationmd5file=$(md5sum destination.md5 | cut -d" " -f 1)
+
+        if [ "$sourcemd5file" = "$destinationmd5file" ]; then
+            echo "MD5 sum of source destination matches that of destination"
+        else
+            echo "MD5 sum of source destination matches does not match that of destination - exiting program "
+            exit 1
+        fi
+    fi
+
+    # mark results as complete - do this first so post processing can start asap
+    touch "$output_dir"/"$seqId"/"$panel"/dragen_complete.txt
+    touch "$output_dir"/"$seqId"/"$panel"/post_processing_required.txt
+
+    # clean up staging results
+    rm -r /staging/data/results/"$seqId"/"$panel"
+    # clean up staging fastq
+    rm -r /staging/data/fastq/"$seqId"/Data/"$panel"
+
+
+    # clean up staging fastq if we have processed all panels
+    if [ "$(ls -A /staging/data/fastq/"$seqId"/Data/)" ]; then
+        echo "Not all panels processed - keeping staging fastq"
+    else
+        echo "All panels processed - removing staging fastq directory"
+        rm -r /staging/data/fastq/"$seqId"/
+
+    fi
+
+    # clean up staging results if we have processed all panels
+    if [ "$(ls -A /staging/data/results/"$seqId"/)" ]; then
+        echo "Not all panels processed - keeping staging results"
+    else
+        echo "All panels processed - removing staging results directory"
+        rm -r /staging/data/results/"$seqId"/
+
+    fi
+
 
 else
     echo "$sampleId is not the last sample"
