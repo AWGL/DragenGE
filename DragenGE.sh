@@ -20,6 +20,11 @@ dragen_ref="/staging/resources/human/reference/GRCh37"
 output_dir="/Output/results/"
 
 
+# load variables for sample and pipeline
+. *.variables
+. "$pipeline_dir"/"$pipelineName"/"$pipelineName"-"$pipelineVersion"/config/"$panel"/*.variables
+
+
 # copy relevant variables files to the results directory
 cp "$pipeline_dir"/"$pipelineName"/"$pipelineName"-"$pipelineVersion"/config/"$panel"/*.variables ..
 cp -r "$pipeline_dir"/"$pipelineName"/"$pipelineName"-"$pipelineVersion"/config .
@@ -29,14 +34,13 @@ cp -r "$pipeline_dir"/"$pipelineName"/"$pipelineName"-"$pipelineVersion"/config 
 
 echo "RGID,RGSM,RGLB,Lane,Read1File,Read2File" > fastqs.csv
 
-
 for fastqPair in $(ls "$sampleId"_S*.fastq.gz | cut -d_ -f1-3 | sort | uniq); do
    
    laneId=$(echo "$fastqPair" | cut -d_ -f3)
    read1Fastq=$(ls "$fastqPair"_R1_*fastq.gz)
    read2Fastq=$(ls "$fastqPair"_R2_*fastq.gz)
 
-   echo "$seqId,$sampleId,$seqId,$laneId,$PWD/$read1Fastq,$PWD/$read2Fastq" >> fastqs.csv
+   echo "$seqId"_"$laneId","$sampleId","$seqId","$laneId","$read1Fastq","$read2Fastq" >> fastqs.csv
 
 done
 
@@ -57,7 +61,10 @@ done
 --vc-target-bed config/"$panel"/"$panel"_ROI_b37.bed \
 --vc-emit-ref-confidence GVCF \
 --vc-target-bed-padding 100 \
---strict-mode true 
+--strict-mode true \
+--qc-coverage-region-1 config/"$panel"/"$panel"_ROI_b37.bed \
+--qc-coverage-reports-1 cov_report \
+--qc-coverage-filters-1 'mapq<20,bq<10' 
 
 if [ -e "$seqId"_"$sampleId".hard-filtered.gvcf.gz ]; then
     echo $sampleId/"$seqId"_"$sampleId".hard-filtered.gvcf.gz >> ../gVCFList.txt
@@ -99,11 +106,11 @@ if [ $expGVCF == $obsGVCF ]; then
         rsync -azP --no-links . "$output_dir"/"$seqId"/"$panel"
 
         # get md5 sums for source
-        find . -type f | egrep -v "*md5" | xargs md5sum | cut -d" " -f 1 | sort > source.md5
+        find . -type f | egrep -v "*md5" | egrep -v "*log" | xargs md5sum | cut -d" " -f 1 | sort > source.md5
 
         # get md5 sums for destination
 
-        find "$output_dir"/"$seqId"/"$panel" -type f | egrep -v "*md5*" | xargs md5sum | cut -d" " -f 1 | sort > destination.md5
+        find "$output_dir"/"$seqId"/"$panel" -type f | egrep -v "*md5*" | egrep -v "*.log" | xargs md5sum | cut -d" " -f 1 | sort > destination.md5
 
         sourcemd5file=$(md5sum source.md5 | cut -d" " -f 1)
         destinationmd5file=$(md5sum destination.md5 | cut -d" " -f 1)
