@@ -30,7 +30,7 @@ This can be found within the staging area fastq directory on the Dragen e.g. /st
 Once within this folder:
 
 ```
-bash DragenHE.sh $sample_folder_location
+bash DragenGE.sh $sample_folder_location
 ```
 Where $sample_folder_location is something like /staging/data/fastq/191010_D00501_0366_BH5JWHBCX3/Data/IlluminaTruSightOne/sample1
 
