@@ -8,7 +8,7 @@ Calls SNPs/Indels
 
 ## Requirements
 
-dragen Version 07.021.408.3.4.12 (Software Release v3.4)
+dragen Version (Software Release v3.7)
 
 ## Run
 
