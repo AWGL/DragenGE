@@ -16,7 +16,7 @@ version=2.0.0
 ##############################################
 
 pipeline_dir="/data/diagnostics/pipelines/"
-dragen_ref="/staging/resources/human/reference/GRCh37"
+dragen_ref="/staging/resources/human/reference/GRCh38"
 output_dir="/Output/results/"
 
 
@@ -56,15 +56,17 @@ done
 --enable-duplicate-marking true \
 --enable-variant-caller true \
 --vc-enable-joint-detection true \
---qc-cross-cont-vcf config/"$panel"/sample_cross_contamination_resource_GRCh37.vcf \
+--qc-cross-cont-vcf config/"$panel"/sample_cross_contamination_resource_h38.vcf \
 --vc-sample-name "$sampleId" \
---vc-target-bed config/"$panel"/"$panel"_ROI_b37.bed \
+--vc-target-bed config/"$panel"/"$panel"_ROI_h38.bed \
 --vc-emit-ref-confidence GVCF \
 --vc-target-bed-padding 100 \
 --strict-mode true \
---qc-coverage-region-1 config/"$panel"/"$panel"_ROI_b37.bed \
+--qc-coverage-region-1 config/"$panel"/"$panel"_ROI_h38.bed \
 --qc-coverage-reports-1 cov_report \
 --qc-coverage-filters-1 'mapq<20,bq<10' 
+#--enable-cnv true \
+#--enable-sv true 
 
 if [ -e "$seqId"_"$sampleId".hard-filtered.gvcf.gz ]; then
     echo $sampleId/"$seqId"_"$sampleId".hard-filtered.gvcf.gz >> ../gVCFList.txt
