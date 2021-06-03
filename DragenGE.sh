@@ -64,9 +64,9 @@ done
 --strict-mode true \
 --qc-coverage-region-1 config/"$panel"/"$panel"_ROI_h38.bed \
 --qc-coverage-reports-1 cov_report \
---qc-coverage-filters-1 'mapq<20,bq<10' 
-#--enable-cnv true \
-#--enable-sv true 
+--qc-coverage-filters-1 'mapq<20,bq<10' \
+--enable-map-align true \
+--enable-sv true 
 
 if [ -e "$seqId"_"$sampleId".hard-filtered.gvcf.gz ]; then
     echo $sampleId/"$seqId"_"$sampleId".hard-filtered.gvcf.gz >> ../gVCFList.txt
