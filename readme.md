@@ -4,9 +4,9 @@
 
 A pipeline to perform joint calling on targetted enrichment NGS data on the Dragen server.
 
-Updated for GRCh38.
-
 Calls SNPs/Indels
+
+Updated for Human Reference Genome Build GRCh38
 
 ## Requirements
 
