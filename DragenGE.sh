@@ -56,7 +56,7 @@ done
 --enable-duplicate-marking true \
 --enable-variant-caller true \
 --vc-enable-joint-detection true \
---qc-cross-cont-vcf config/"$panel"/sample_cross_contamination_resource_h38.vcf \
+--qc-cross-cont-vcf config/"$panel"/sample_cross_contamination_resource_hg38.vcf \
 --vc-sample-name "$sampleId" \
 --vc-target-bed config/"$panel"/"$panel"_ROI_h38.bed \
 --vc-emit-ref-confidence GVCF \
