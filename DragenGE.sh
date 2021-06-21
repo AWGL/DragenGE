@@ -16,7 +16,6 @@ version=2.0.0
 ##############################################
 
 pipeline_dir="/data/diagnostics/pipelines/"
-#dragen_ref="/staging/resources/human/reference/GRCh38/"
 output_dir="/Output/results/"
 
 
@@ -67,6 +66,7 @@ done
 --qc-coverage-filters-1 'mapq<20,bq<10' \
 --enable-map-align true \
 --alt-aware true
+
 if [ -e "$seqId"_"$sampleId".hard-filtered.gvcf.gz ]; then
     echo $sampleId/"$seqId"_"$sampleId".hard-filtered.gvcf.gz >> ../gVCFList.txt
 fi
