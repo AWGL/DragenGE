@@ -1,2 +1,6 @@
 post_processing_pipeline=dragenge_post_processing
-post_processing_pipeline_version=master
+post_processing_pipeline_version=Build38
+callSV=true
+dragen_ref="/staging/resources/human/reference/GRCh37/"
+genome_build="b37"
+fasta="human_g1k_v37.fasta"

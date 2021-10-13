@@ -16,7 +16,6 @@ version=2.0.0
 ##############################################
 
 pipeline_dir="/data/diagnostics/pipelines/"
-dragen_ref="/staging/resources/human/reference/GRCh37"
 output_dir="/Output/results/"
 
 
@@ -28,7 +27,7 @@ output_dir="/Output/results/"
 # copy relevant variables files to the results directory
 cp "$pipeline_dir"/"$pipelineName"/"$pipelineName"-"$pipelineVersion"/config/"$panel"/*.variables ..
 cp -r "$pipeline_dir"/"$pipelineName"/"$pipelineName"-"$pipelineVersion"/config .
-
+cp -r "$pipeline_dir"/"$pipelineName"/"$pipelineName"-"$pipelineVersion"/commands .
 
 # make csv with fastqs in
 
@@ -56,19 +55,26 @@ done
 --enable-duplicate-marking true \
 --enable-variant-caller true \
 --vc-enable-joint-detection true \
---qc-cross-cont-vcf config/"$panel"/sample_cross_contamination_resource_GRCh37.vcf \
+--qc-cross-cont-vcf config/"$panel"/sample_cross_contamination_resource_"$genome_build".vcf \
 --vc-sample-name "$sampleId" \
---vc-target-bed config/"$panel"/"$panel"_ROI_b37.bed \
+--vc-target-bed config/"$panel"/"$panel"_ROI_"$genome_build".bed \
 --vc-emit-ref-confidence GVCF \
 --vc-target-bed-padding 100 \
 --strict-mode true \
---qc-coverage-region-1 config/"$panel"/"$panel"_ROI_b37.bed \
+--qc-coverage-region-1 config/"$panel"/"$panel"_ROI_"$genome_build".bed \
 --qc-coverage-reports-1 cov_report \
---qc-coverage-filters-1 'mapq<20,bq<10' 
+--qc-coverage-filters-1 'mapq<20,bq<10' \
+--enable-map-align true \
+--alt-aware true
 
 if [ -e "$seqId"_"$sampleId".hard-filtered.gvcf.gz ]; then
     echo $sampleId/"$seqId"_"$sampleId".hard-filtered.gvcf.gz >> ../gVCFList.txt
 fi
+
+if [ -e "$seqId"_"$sampleId".bam ]; then
+    echo "--bam-input "$sampleId"/"$seqId"_"$sampleId".bam \\" >> ../BAMList.txt
+fi
+
 
 # if all samples have been processed for the panel perform joint genotyping
 # expected number
@@ -80,6 +86,8 @@ obsGVCF=$(wc -l < ../gVCFList.txt)
 if [ $expGVCF == $obsGVCF ]; then
     echo "$sampleId is the last sample"
     echo "performing joint genotyping"
+    
+    mv commands/joint_call_svs.sh ..
     cd ..
 
     /opt/edico/bin/dragen \
@@ -91,6 +99,17 @@ if [ $expGVCF == $obsGVCF ]; then
         --variant-list gVCFList.txt \
         --strict-mode true
 
+
+    
+    if [ $callSV == true ]; then
+
+        echo Joint Calling SVs
+
+        cat BAMList.txt >> joint_call_svs.sh
+
+        bash joint_call_svs.sh $seqId $panel $dragen_ref
+
+    fi   
 
     # delete gvcfs as we don't need anymore
     ls */*.gvcf.gz* | xargs rm
