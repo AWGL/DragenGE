@@ -88,6 +88,9 @@ if [ $expGVCF == $obsGVCF ]; then
     echo "performing joint genotyping"
     
     mv commands/joint_call_svs.sh ..
+    mv commands/create_ped.py
+    mv commands/by_family.py
+
     cd ..
 
     /opt/edico/bin/dragen \
@@ -105,10 +108,37 @@ if [ $expGVCF == $obsGVCF ]; then
 
         echo Joint Calling SVs
 
-        cat BAMList.txt >> joint_call_svs.sh
+	python create_ped.py --varaiables "*/*.variables" > "$seqId".ped
 
-        bash joint_call_svs.sh $seqId $panel $dragen_ref
+        python by_family.py "$seqId".ped "$seqId"
 
+        mkdir sv_calling
+
+        for family in *_for_sv.family; do        
+
+            cp joint_call_svs.sh joint_call_svs.sh_"$family".sh
+            cat $family >> joint_call_svs.sh_"$family".sh
+            bash joint_call_svs.sh_"$family".sh $family $panel $dragen_ref
+            rm joint_call_svs.sh_"$family".sh
+        done
+
+        #Combining family SV files - needs dragenge_post_processing enviroment for bcftools. If statement only runs bcftools if more than one family. bcftools merge crashes with a single vcf. 
+        if [ `ls -1 sv_calling/*vcf.gz | wc -l` -eq 1]; then
+            cp sv_calling/*.vcf.gz "$seqId".sv.vcf.gz
+        else
+            bcftools merge -m none sv_calling/*.vcf.gz > "$seqId".sv.vcf
+            bgzip "$seqId".sv.vcf
+        fi
+        
+        tabix "$seqId".sv.vcf.gz
+
+        md5sum "$seqId".sv.vcf.gz | cut -d" " -f 1 > "$seqId".sv.vcf.gz.md5sum
+
+        conda deactivate
+        rm -r sv_calling
+        rm *.family
+        rm create_ped.py
+        rm by_family.py	
     fi   
 
     # delete gvcfs as we don't need anymore
