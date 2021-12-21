@@ -24,7 +24,7 @@ for coverage_file in metrics_files:
 		for row in spamreader:
 			key = row[2]
 			value = row[3]
-			if key == 'Average sequenced coverage over genome':
+			if key == 'Average sequenced coverage over target region':
 				if float(value) > min_depth:
 					sample_id = coverage_file.split('/')[0]
 					sample_dict[sample_id] = sample_id

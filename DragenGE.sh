@@ -88,8 +88,8 @@ if [ $expGVCF == $obsGVCF ]; then
     echo "performing joint genotyping"
     
     mv commands/joint_call_svs.sh ..
-    mv commands/create_ped.py
-    mv commands/by_family.py
+    mv commands/create_ped.py ..
+    mv commands/by_family.py ..
 
     cd ..
 
@@ -108,7 +108,7 @@ if [ $expGVCF == $obsGVCF ]; then
 
         echo Joint Calling SVs
 
-	python create_ped.py --varaiables "*/*.variables" > "$seqId".ped
+	python create_ped.py --variables "*/*.variables" > "$seqId".ped
 
         python by_family.py "$seqId".ped "$seqId"
 
@@ -123,7 +123,11 @@ if [ $expGVCF == $obsGVCF ]; then
         done
 
         #Combining family SV files - needs dragenge_post_processing enviroment for bcftools. If statement only runs bcftools if more than one family. bcftools merge crashes with a single vcf. 
-        if [ `ls -1 sv_calling/*vcf.gz | wc -l` -eq 1]; then
+        set +u
+        source activate dragenge_post_processing
+        set -u
+
+        if [ `ls -1 sv_calling/*vcf.gz | wc -l` -eq 1 ]; then
             cp sv_calling/*.vcf.gz "$seqId".sv.vcf.gz
         else
             bcftools merge -m none sv_calling/*.vcf.gz > "$seqId".sv.vcf
