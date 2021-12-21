@@ -138,7 +138,10 @@ if [ $expGVCF == $obsGVCF ]; then
 
         md5sum "$seqId".sv.vcf.gz | cut -d" " -f 1 > "$seqId".sv.vcf.gz.md5sum
 
-        conda deactivate
+        set +u
+	conda deactivate
+	set -u
+
         rm -r sv_calling
         rm *.family
         rm create_ped.py
