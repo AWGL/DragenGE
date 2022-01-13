@@ -1,5 +1,5 @@
 post_processing_pipeline=dragenge_post_processing
-post_processing_pipeline_version=development
+post_processing_pipeline_version=mosaic
 callSV=true
 callmosaic=true
 dragen_ref="/staging/resources/human/reference/GRCh38_masked/"
