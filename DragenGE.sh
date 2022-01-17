@@ -86,8 +86,6 @@ if [ $callmosaic == true ]; then
 	-r $dragen_ref \
 	--output-directory . \
 	--output-file-prefix "$seqId"_"$sampleId"_Mosaic \
-	--output-format BAM \
-	--enable-map-align-output true \
 	--tumor-fastq-list ../fastqs.csv \
 	--tumor-fastq-list-sample-id $sampleId \
 	--enable-duplicate-marking true \
@@ -98,9 +96,6 @@ if [ $callmosaic == true ]; then
 	--vc-target-bed ../config/"$panel"/"$panel"_ROI_"$genome_build".bed \
 	--vc-target-bed-padding 100 \
 	--strict-mode true \
-	--qc-coverage-region-1 ../config/"$panel"/"$panel"_ROI_"$genome_build".bed \
-	--qc-coverage-reports-1 cov_report \
-	--qc-coverage-filters-1 'mapq<20,bq<10' \
 	--enable-map-align true \
 	--alt-aware true
 	
