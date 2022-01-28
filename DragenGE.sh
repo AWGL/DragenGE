@@ -75,6 +75,32 @@ if [ -e "$seqId"_"$sampleId".bam ]; then
     echo "--bam-input "$sampleId"/"$seqId"_"$sampleId".bam \\" >> ../BAMList.txt
 fi
 
+if [ $callmosaic == true ]; then
+
+	echo Calling Mosaic Variants
+	
+	mkdir Mosaic_Calling
+        cd Mosaic_Calling
+
+	/opt/edico/bin/dragen \
+	-r $dragen_ref \
+	--output-directory . \
+	--output-file-prefix "$seqId"_"$sampleId"_Mosaic \
+	--tumor-fastq-list ../fastqs.csv \
+	--tumor-fastq-list-sample-id $sampleId \
+	--enable-duplicate-marking true \
+	--enable-variant-caller true \
+	--vc-enable-joint-detection true \
+	--qc-cross-cont-vcf ../config/"$panel"/sample_cross_contamination_resource_"$genome_build".vcf \
+	--vc-sample-name "$sampleId" \
+	--vc-target-bed ../config/"$panel"/"$panel"_ROI_"$genome_build".bed \
+	--vc-target-bed-padding 100 \
+	--strict-mode true \
+	--enable-map-align true \
+	--alt-aware true
+	
+	cd ../
+fi 
 
 # if all samples have been processed for the panel perform joint genotyping
 # expected number

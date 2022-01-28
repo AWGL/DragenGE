@@ -1,6 +1,7 @@
 post_processing_pipeline=dragenge_post_processing
 post_processing_pipeline_version=development
 callSV=true
+callmosaic=true
 dragen_ref="/staging/resources/human/reference/GRCh38_masked/"
 genome_build="hg38"
 fasta="GRCh38_full_analysis_set_plus_decoy_hla.fa"
