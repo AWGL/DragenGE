@@ -1,5 +1,5 @@
 post_processing_pipeline=dragenge_post_processing
-post_processing_pipeline_version=Build38
+post_processing_pipeline_version=master
 callSV=true
 dragen_ref="/staging/resources/human/reference/GRCh38_Dragen/"
 genome_build="hg38"
