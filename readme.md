@@ -6,6 +6,8 @@ A pipeline to perform joint calling on targetted enrichment NGS data on the Drag
 
 Calls SNPs/Indels
 
+Updated for Human Reference Genome Build GRCh38
+
 ## Requirements
 
 dragen Version (Software Release v3.7)

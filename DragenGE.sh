@@ -16,7 +16,6 @@ version=2.0.0
 ##############################################
 
 pipeline_dir="/data/diagnostics/pipelines/"
-dragen_ref="/staging/resources/human/reference/GRCh37"
 output_dir="/Output/results/"
 
 
@@ -28,7 +27,7 @@ output_dir="/Output/results/"
 # copy relevant variables files to the results directory
 cp "$pipeline_dir"/"$pipelineName"/"$pipelineName"-"$pipelineVersion"/config/"$panel"/*.variables ..
 cp -r "$pipeline_dir"/"$pipelineName"/"$pipelineName"-"$pipelineVersion"/config .
-
+cp -r "$pipeline_dir"/"$pipelineName"/"$pipelineName"-"$pipelineVersion"/commands .
 
 # make csv with fastqs in
 
@@ -56,19 +55,26 @@ done
 --enable-duplicate-marking true \
 --enable-variant-caller true \
 --vc-enable-joint-detection true \
---qc-cross-cont-vcf config/"$panel"/sample_cross_contamination_resource_GRCh37.vcf \
+--qc-cross-cont-vcf config/"$panel"/sample_cross_contamination_resource_"$genome_build".vcf \
 --vc-sample-name "$sampleId" \
---vc-target-bed config/"$panel"/"$panel"_ROI_b37.bed \
+--vc-target-bed config/"$panel"/"$panel"_ROI_"$genome_build".bed \
 --vc-emit-ref-confidence GVCF \
 --vc-target-bed-padding 100 \
 --strict-mode true \
---qc-coverage-region-1 config/"$panel"/"$panel"_ROI_b37.bed \
+--qc-coverage-region-1 config/"$panel"/"$panel"_ROI_"$genome_build".bed \
 --qc-coverage-reports-1 cov_report \
---qc-coverage-filters-1 'mapq<20,bq<10' 
+--qc-coverage-filters-1 'mapq<20,bq<10' \
+--enable-map-align true \
+--alt-aware true
 
 if [ -e "$seqId"_"$sampleId".hard-filtered.gvcf.gz ]; then
     echo $sampleId/"$seqId"_"$sampleId".hard-filtered.gvcf.gz >> ../gVCFList.txt
 fi
+
+if [ -e "$seqId"_"$sampleId".bam ]; then
+    echo "--bam-input "$sampleId"/"$seqId"_"$sampleId".bam \\" >> ../BAMList.txt
+fi
+
 
 # if all samples have been processed for the panel perform joint genotyping
 # expected number
@@ -80,6 +86,11 @@ obsGVCF=$(wc -l < ../gVCFList.txt)
 if [ $expGVCF == $obsGVCF ]; then
     echo "$sampleId is the last sample"
     echo "performing joint genotyping"
+    
+    mv commands/joint_call_svs.sh ..
+    mv commands/create_ped.py ..
+    mv commands/by_family.py ..
+
     cd ..
 
     /opt/edico/bin/dragen \
@@ -91,6 +102,51 @@ if [ $expGVCF == $obsGVCF ]; then
         --variant-list gVCFList.txt \
         --strict-mode true
 
+
+    
+    if [ $callSV == true ]; then
+
+        echo Joint Calling SVs
+
+	python create_ped.py --variables "*/*.variables" > "$seqId".ped
+
+        python by_family.py "$seqId".ped "$seqId"
+
+        mkdir sv_calling
+
+        for family in *_for_sv.family; do        
+
+            cp joint_call_svs.sh joint_call_svs.sh_"$family".sh
+            cat $family >> joint_call_svs.sh_"$family".sh
+            bash joint_call_svs.sh_"$family".sh $family $panel $dragen_ref $fasta
+            rm joint_call_svs.sh_"$family".sh
+        done
+
+        #Combining family SV files - needs dragenge_post_processing enviroment for bcftools. If statement only runs bcftools if more than one family. bcftools merge crashes with a single vcf. 
+        set +u
+        source activate dragenge_post_processing
+        set -u
+
+        if [ `ls -1 sv_calling/*vcf.gz | wc -l` -eq 1 ]; then
+            cp sv_calling/*.vcf.gz "$seqId".sv.vcf.gz
+        else
+            bcftools merge -m none sv_calling/*.vcf.gz > "$seqId".sv.vcf
+            bgzip "$seqId".sv.vcf
+        fi
+        
+        tabix "$seqId".sv.vcf.gz
+
+        md5sum "$seqId".sv.vcf.gz | cut -d" " -f 1 > "$seqId".sv.vcf.gz.md5sum
+
+        set +u
+	conda deactivate
+	set -u
+
+        rm -r sv_calling
+        rm *.family
+        rm create_ped.py
+        rm by_family.py	
+    fi   
 
     # delete gvcfs as we don't need anymore
     ls */*.gvcf.gz* | xargs rm
