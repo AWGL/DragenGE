@@ -67,6 +67,8 @@ done
 --enable-map-align true \
 --alt-aware true
 
+touch "$seqId"_"$sampleId".mapping_metrics.csv
+
 if [ -e "$seqId"_"$sampleId".hard-filtered.gvcf.gz ]; then
     echo $sampleId/"$seqId"_"$sampleId".hard-filtered.gvcf.gz >> ../gVCFList.txt
 fi
