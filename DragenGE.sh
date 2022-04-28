@@ -9,7 +9,7 @@ ulimit -S -n 65535
 
 # Usage: cd /staging/data/results/$seqId/$panel/$sampleId && bash DragenWGS.sh 
 
-version=2.0.0
+version=2.2.0
 
 ##############################################
 # SETUP                                      #
@@ -66,6 +66,8 @@ done
 --qc-coverage-filters-1 'mapq<20,bq<10' \
 --enable-map-align true \
 --alt-aware true
+
+touch "$seqId"_"$sampleId".mapping_metrics.csv
 
 if [ -e "$seqId"_"$sampleId".hard-filtered.gvcf.gz ]; then
     echo $sampleId/"$seqId"_"$sampleId".hard-filtered.gvcf.gz >> ../gVCFList.txt
