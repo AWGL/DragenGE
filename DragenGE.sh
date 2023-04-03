@@ -9,7 +9,7 @@ ulimit -S -n 65535
 
 # Usage: cd /staging/data/results/$seqId/$panel/$sampleId && bash DragenWGS.sh 
 
-version=2.3.0
+version=2.7.0
 
 ##############################################
 # SETUP                                      #
@@ -164,11 +164,11 @@ if [ $expGVCF == $obsGVCF ]; then
         rsync -azP --no-links . "$output_dir"/"$seqId"/"$panel"
 
         # get md5 sums for source
-        find . -type f | egrep -v "*md5" | egrep -v "*log" | xargs md5sum | cut -d" " -f 1 | sort > source.md5
+        find . -type f | egrep -v "*md5" | egrep -v "*log" | egrep "*.vcf.gz" | xargs md5sum | cut -d" " -f 1 | sort > source.md5
 
         # get md5 sums for destination
 
-        find "$output_dir"/"$seqId"/"$panel" -type f | egrep -v "*md5*" | egrep -v "*.log" | xargs md5sum | cut -d" " -f 1 | sort > destination.md5
+        find "$output_dir"/"$seqId"/"$panel" -type f | egrep -v "*md5*" | egrep -v "*.log" | egrep "*.vcf.gz" | xargs md5sum | cut -d" " -f 1 | sort > destination.md5
 
         sourcemd5file=$(md5sum source.md5 | cut -d" " -f 1)
         destinationmd5file=$(md5sum destination.md5 | cut -d" " -f 1)
