@@ -52,6 +52,7 @@ done
 --enable-map-align-output true \
 --fastq-list fastqs.csv \
 --fastq-list-sample-id $sampleId \
+--read-trimmers adapter \
 --enable-duplicate-marking true \
 --enable-variant-caller true \
 --vc-enable-joint-detection true \
