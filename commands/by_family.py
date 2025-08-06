@@ -71,7 +71,7 @@ for key in fam_dict:
 	family_rows = []
 	for sample in fam_dict[key]:
 		if sample in sample_dict:
-            family_rows.append('--bam-input /mnt/Data-MSA/results/{}/{}/alignments/{}/{}_{}.bam \\'.format(seq_id, panel, sample, seq_id, sample))
+			family_rows.append('--bam-input /mnt/Data-MSA/results/{}/{}/alignments/{}/{}_{}.bam \\'.format(seq_id, panel, sample, seq_id, sample))
 	if len(family_rows) > 0:
 		with open(out_file, 'w') as csvfile:
 			spamwriter = csv.writer(csvfile, delimiter='\t', lineterminator='\n')
