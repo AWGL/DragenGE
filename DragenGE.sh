@@ -17,6 +17,7 @@ version=2.7.0
 
 pipeline_dir="/mnt/Data-MSA/diagnostics/pipelines/"
 output_dir="/mnt/Data-MSA/results/"
+bcftools_path="/mnt/Data-MSA/diagnostics/apps/miniconda3/envs/bcftools/bin/"
 
 
 # load variables for sample and pipeline
@@ -160,25 +161,18 @@ if [ $expGVCF == $obsGVCF ]; then
             rm joint_call_svs.sh_"$family".sh
         done
 
-	#Combining family SV files - needs dragenge_post_processing enviroment for bcftools. If statement only runs bcftools if more than one family. bcftools merge crashes with a single vcf. 
-        set +u
-        source activate dragenge_post_processing
-        set -u
+	#Combining family SV files - runs from conda environment installed on mount. If statement only runs bcftools if more than one family. bcftools merge crashes with a single vcf. 
 
         if [ `ls -1 sv_calling/*vcf.gz | wc -l` -eq 1 ]; then
             cp sv_calling/*.vcf.gz "$seqId".sv.vcf.gz
         else
-            bcftools merge -m none -F x sv_calling/*.vcf.gz > "$seqId".sv.vcf
-            bgzip "$seqId".sv.vcf
+            ${bcftools_path}/bcftools merge -m none -F x sv_calling/*.vcf.gz > "$seqId".sv.vcf
+            ${bcftools_path}/bgzip "$seqId".sv.vcf
         fi
         
-        tabix "$seqId".sv.vcf.gz
+        ${bcftools_path}/tabix "$seqId".sv.vcf.gz
 
         md5sum "$seqId".sv.vcf.gz | cut -d" " -f 1 > "$seqId".sv.vcf.gz.md5sum
-
-        set +u
-	conda deactivate
-	set -u
 
         rm -r sv_calling
         rm *.family
