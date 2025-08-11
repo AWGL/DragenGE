@@ -207,17 +207,20 @@ if [ $expGVCF == $obsGVCF ]; then
 
     # clean up staging results
     rm -r /staging/data/results/"$seqId"/"$panel"
-    # clean up staging fastq
-    rm -r /staging/data/fastq/"$seqId"/Data/"$panel"
-
+    # clean up fastq will depends where this has been written
+    if [ -d /staging/data/fastq/"$seqId"/Data/"$panel" ]; then
+	fastq_path=/staging/data/fastq/"$seqId"/
+    else
+	fastq_path=/mnt/Data-MSA/results/"$seqId"/fastq/
+    fi
+    rm -r "$fastq_path"/Data/"$panel"
 
     # clean up staging fastq if we have processed all panels
-    if [ "$(ls -A /staging/data/fastq/"$seqId"/Data/)" ]; then
+    if [ "$(ls -A "$fastq_path"/Data)" ]; then
         echo "Not all panels processed - keeping staging fastq"
     else
         echo "All panels processed - removing staging fastq directory"
-        rm -r /staging/data/fastq/"$seqId"/
-
+        rm -r $fastq_path
     fi
 
     # clean up staging results if we have processed all panels
