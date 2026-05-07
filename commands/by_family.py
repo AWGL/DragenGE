@@ -5,13 +5,14 @@ import glob
 
 ped = sys.argv[1]
 seq_id = sys.argv[2]
+panel = sys.argv[3]
 
 fam_dict = {}
 no_fam_int = 0
 
 # We need the metrics files (Dragen v3.7) and target bed coverage metrics files (Dragen v3.10.8) for excluding low coverage samples
-metrics_files = glob.glob('*/*.mapping_metrics.csv')
-target_files = glob.glob('*/*target_bed_coverage_metrics.csv')
+metrics_files = glob.glob('/mnt/Data-MSA/results/{}/{}/metrics/*/*.mapping_metrics.csv'.format(seq_id, panel))
+target_files = glob.glob('/mnt/Data-MSA/results/{}/{}/metrics/*/*target_bed_coverage_metrics.csv'.format(seq_id, panel))
 
 min_depth = 5
 sample_dict = {}
@@ -42,12 +43,12 @@ else:
 				key = row[2]
 				value = row[3]
 				if key == 'Average alignment coverage over target region':
-					
+
 					if value == 'NA':
 
 						value = 0.0
 					if float(value) > min_depth:
-						sample_id = coverage_file.split('/')[0]
+						sample_id = coverage_file.split('/')[7]
 						sample_dict[sample_id] = sample_id
 						break
 
@@ -57,7 +58,7 @@ with open(ped) as csvfile:
 		fam_id = row[0]
 		sample_name = row[1]
 		if fam_id == 0 or fam_id == '0':
-			fam_dict[f'singleton_{no_fam_int}'] = [sample_name]
+			fam_dict['singleton_{}'.format(no_fam_int)] = [sample_name]
 			no_fam_int += 1
 		else:
 			if fam_id not in fam_dict:
@@ -66,11 +67,11 @@ with open(ped) as csvfile:
 				fam_dict[fam_id].append(sample_name)
 
 for key in fam_dict:
-	out_file = f'{key}_for_sv.family'
+	out_file = '{}_for_sv.family'.format(key)
 	family_rows = []
 	for sample in fam_dict[key]:
 		if sample in sample_dict:
-			family_rows.append(f'--bam-input {sample}/{seq_id}_{sample}.bam \\')
+			family_rows.append('--bam-input /mnt/Data-MSA/results/{}/{}/alignments/{}/{}_{}.bam \\'.format(seq_id, panel, sample, seq_id, sample))
 	if len(family_rows) > 0:
 		with open(out_file, 'w') as csvfile:
 			spamwriter = csv.writer(csvfile, delimiter='\t', lineterminator='\n')
